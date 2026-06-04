@@ -11,6 +11,7 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] == true)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Administrator - ArsipMusik</title>
+    <link rel="icon" href="assets/logo.png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="login-page">
@@ -18,7 +19,7 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] == true)
     <div class="login-card">
         <div class="login-logo">
             <a href="index.php" class="logo">
-                <span class="logo-icon"></span>
+                <img src="assets/logo.png" alt="Logo" class="logo-img">
                 ArsipMusik
             </a>
         </div>
@@ -44,6 +45,9 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] == true)
             <!-- Submit Button -->
             <input type="submit" name="submit" value="Masuk" class="btn-primary-block" id="btn-login-submit">
         </form>
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="index.php" style="text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;">&larr; Kembali ke Beranda</a>
+        </div>
 
         <?php
         include('config/koneksi.php');

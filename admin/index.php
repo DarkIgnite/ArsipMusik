@@ -2,61 +2,14 @@
 // Include session checking
 require_once '../config/session.php';
 
-// Pagination settings
-$limit = 10;
-if (isset($_GET['page'])) {
-    $page = max(1, (int)$_GET['page']);
-} else {
-    $page = 1;
-}
+// Fetch some statistics for the dashboard
+$count_lagu_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu");
+$count_lagu = mysqli_fetch_array($count_lagu_query)['total'];
 
-// Search and Filter variables
-$search = '';
-if (isset($_GET['q'])) {
-    $search = trim($_GET['q']);
-}
+$count_genre_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_genre");
+$count_genre = mysqli_fetch_array($count_genre_query)['total'];
 
-$genre_filter = 0;
-if (isset($_GET['genre'])) {
-    $genre_filter = (int)$_GET['genre'];
-}
-
-// Build query conditions
-$where_clauses = array();
-if ($search != '') {
-    $safe_search = mysqli_real_escape_string($conn, $search);
-    $where_clauses[] = "(tb_lagu.judul LIKE '%$safe_search%' OR tb_lagu.artis LIKE '%$safe_search%' OR tb_lagu.album LIKE '%$safe_search%')";
-}
-if ($genre_filter > 0) {
-    $where_clauses[] = "tb_lagu.id_genre = $genre_filter";
-}
-
-$where_sql = '';
-if (count($where_clauses) > 0) {
-    $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
-}
-
-// Fetch row count for pagination calculations
-$count_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu $where_sql");
-$count_data = mysqli_fetch_array($count_query);
-$total_rows = $count_data['total'];
-$total_pages = ceil($total_rows / $limit);
-if ($total_pages < 1) $total_pages = 1;
-if ($page > $total_pages) $page = $total_pages;
-
-$offset = ($page - 1) * $limit;
-if ($offset < 0) $offset = 0;
-
-// Fetch track details with INNER JOIN
-$query = mysqli_query($conn, "SELECT tb_lagu.*, tb_genre.nama_genre 
-          FROM tb_lagu 
-          INNER JOIN tb_genre ON tb_lagu.id_genre = tb_genre.id_genre 
-          $where_sql 
-          ORDER BY tb_lagu.id_lagu DESC 
-          LIMIT $limit OFFSET $offset");
-
-// Fetch genre listings for dropdown filter
-$genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
+$latest_lagu_query = mysqli_query($conn, "SELECT tb_lagu.*, tb_genre.nama_genre FROM tb_lagu JOIN tb_genre ON tb_lagu.id_genre = tb_genre.id_genre ORDER BY id_lagu DESC LIMIT 5");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -64,144 +17,86 @@ $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - ArsipMusik</title>
+    <link rel="icon" href="../assets/logo.png">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 
-    <div class="admin-layout">
-        
-        <!-- Sidebar Navigation Component -->
-        <?php include 'components/sidebar.php'; ?>
+    <div class="wrapper">
+        <div class="header"></div>
 
-        <!-- Main Workspace -->
-        <main class="admin-main">
-            
-            <!-- Dashboard Header Section -->
-            <header class="admin-header">
-                <div class="admin-title-desc">
-                    <h1 class="admin-title">Arsip Lagu</h1>
-                    <p class="admin-subtitle">Kelola dan update arsip koleksi musik Anda</p>
+        <div class="sidebar">
+            <div class="sidebar-title">
+                <img src="../assets/logo.png" alt="Logo" class="sidebar-logo">
+                <b>ArsipMusik</b>
+            </div>
+            <ul>
+                <?php include 'components/sidebar.php' ?>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="container-admin">
+                <div class="admin-header-tesla">
+                    <h1>Dashboard</h1>
+                    <p>Ringkasan aktivitas dan statistik koleksi musik Anda</p>
                 </div>
-                <a href="tambah.php" class="btn-action-primary" id="btn-add-track">
-                    <span>➕</span> Tambah Lagu Baru
-                </a>
-            </header>
 
-            <!-- Search and Filtering Section -->
-            <section class="search-filter-section" style="margin-top: 0;">
-                <div class="search-filter-card">
-                    <form action="index.php" method="GET" class="search-filter-form">
-                        <!-- Text Search field -->
-                        <input type="text" name="q" value="<?php echo $search ?>" 
-                               placeholder="Cari judul lagu, artis, atau album..." class="form-input" id="admin-search-input">
-                        
-                        <!-- Genre Select field -->
-                        <select name="genre" class="form-input" id="admin-genre-filter">
-                            <option value="0">Semua Genre</option>
-                            <?php while ($g_row = mysqli_fetch_array($genres_result)): ?>
-                                <option value="<?php echo $g_row['id_genre'] ?>" <?php echo ($genre_filter == $g_row['id_genre']) ? 'selected' : '' ?>>
-                                    <?php echo $g_row['nama_genre'] ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
-                        
-                        <button type="submit" class="btn-search" id="btn-admin-submit-search">Cari</button>
-                        <?php if ($search != '' || $genre_filter > 0): ?>
-                            <a href="index.php" class="btn-reset" id="btn-admin-reset-search">Reset</a>
-                        <?php endif; ?>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Display Track Table -->
-            <?php if (mysqli_num_rows($query) > 0): ?>
-                <div class="table-card" id="admin-table-card">
-                    <div class="table-responsive">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 70px;">Cover</th>
-                                    <th>Lagu</th>
-                                    <th>Album</th>
-                                    <th>Genre</th>
-                                    <th style="width: 100px;">Rilis</th>
-                                    <th style="width: 100px;">Durasi</th>
-                                    <th style="width: 160px; text-align: center;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($row = mysqli_fetch_array($query)): ?>
-                                    <tr>
-                                        <!-- Album Cover column -->
-                                        <td>
-                                            <img src="../uploads/<?php echo $row['gambar'] ?>" 
-                                                 alt="Cover <?php echo $row['judul'] ?>" class="table-song-thumb">
-                                        </td>
-                                        <!-- Song Details column -->
-                                        <td>
-                                            <div class="table-song-info">
-                                                <div>
-                                                    <div class="table-song-title"><?php echo $row['judul'] ?></div>
-                                                    <div class="table-song-artist"><?php echo $row['artis'] ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <!-- Album column -->
-                                        <td><?php echo $row['album'] ?></td>
-                                        <!-- Genre Badge column -->
-                                        <td>
-                                            <span class="table-badge"><?php echo $row['nama_genre'] ?></span>
-                                        </td>
-                                        <!-- Year column -->
-                                        <td><?php echo $row['tahun_rilis'] ?></td>
-                                        <!-- Duration column -->
-                                        <td><?php echo $row['durasi'] ?></td>
-                                        <!-- Action buttons column -->
-                                        <td style="text-align: center;">
-                                            <div class="action-buttons-cell">
-                                                <a href="edit.php?id=<?php echo $row['id_lagu'] ?>" class="btn-icon btn-edit">Edit</a>
-                                                <a href="hapus.php?id=<?php echo $row['id_lagu'] ?>" 
-                                                   class="btn-icon btn-delete" 
-                                                   onclick="return confirm('Yakin ingin menghapus lagu ini?')">Hapus</a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
+                <div class="dashboard-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 40px;">
+                    <!-- Stat Card 1 -->
+                    <div class="stat-card" style="background: linear-gradient(135deg, #fff 0%, #f8fafc 100%); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px;">
+                        <div style="background: rgba(37, 99, 235, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2563eb; font-weight: bold;">L</div>
+                        <div>
+                            <h3 style="margin-bottom: 4px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;">Total Lagu</h3>
+                            <p style="font-size: 1.75rem; font-weight: 700; color: var(--primary);"><?php echo $count_lagu; ?></p>
+                        </div>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="stat-card" style="background: linear-gradient(135deg, #fff 0%, #f8fafc 100%); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px;">
+                        <div style="background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #10b981; font-weight: bold;">G</div>
+                        <div>
+                            <h3 style="margin-bottom: 4px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;">Total Genre</h3>
+                            <p style="font-size: 1.75rem; font-weight: 700; color: var(--primary);"><?php echo $count_genre; ?></p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Admin Pagination Links -->
-                <?php if ($total_pages > 1): ?>
-                    <div class="pagination-container" id="admin-pagination">
-                        <!-- Prev Page Button -->
-                        <a href="?q=<?php echo urlencode($search) ?>&genre=<?php echo $genre_filter ?>&page=<?php echo $page - 1 ?>" 
-                           class="pagination-btn <?php echo ($page <= 1) ? 'disabled' : '' ?>"
-                           <?php echo ($page <= 1) ? 'onclick="return false;"' : '' ?>>&laquo; Prev</a>
-
-                        <!-- Page Indicator -->
-                        <span class="pagination-info">
-                            Halaman <?php echo $page ?> dari <?php echo $total_pages ?>
-                        </span>
-
-                        <!-- Next Page Button -->
-                        <a href="?q=<?php echo urlencode($search) ?>&genre=<?php echo $genre_filter ?>&page=<?php echo $page + 1 ?>" 
-                           class="pagination-btn <?php echo ($page >= $total_pages) ? 'disabled' : '' ?>"
-                           <?php echo ($page >= $total_pages) ? 'onclick="return false;"' : '' ?>>Next &raquo;</a>
-                    </div>
-                <?php endif; ?>
-
-            <?php else: ?>
-                <!-- Empty State -->
-                <div class="empty-state" id="admin-empty-state">
-                    <div class="empty-state-icon">📁</div>
-                    <h3>Arsip lagu kosong</h3>
-                    <p>Mulai dengan menambahkan lagu baru menggunakan tombol "Tambah Lagu Baru".</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Penambahan Terbaru</h2>
+                    <a href="lagu_tambah.php" class="btn-action-primary" style="height: 38px; font-size: 0.85rem;">+ Tambah Lagu</a>
                 </div>
-            <?php endif; ?>
 
-        </main>
+                <table class="table1">
+                    <thead>
+                        <tr>
+                            <th width="60px">Cover</th>
+                            <th>Judul</th>
+                            <th>Artis</th>
+                            <th>Genre</th>
+                            <th width="100px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($row = mysqli_fetch_array($latest_lagu_query)): ?>
+                            <tr>
+                                <td><img src="../uploads/<?php echo $row['gambar']; ?>" alt="Cover" class="table-img"></td>
+                                <td style="font-weight: 600;"><?php echo $row['judul']; ?></td>
+                                <td><?php echo $row['artis']; ?></td>
+                                <td><span class="table-badge"><?php echo $row['nama_genre']; ?></span></td>
+                                <td>
+                                    <a href="lagu_edit.php?id=<?php echo $row['id_lagu']; ?>" class="btn-edit">Edit</a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="lagu_data.php" style="color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px;">
+                        Lihat Semua Lagu <span>&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
 </body>

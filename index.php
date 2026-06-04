@@ -61,6 +61,7 @@ $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArsipMusik - Koleksi Lagu Terbaik</title>
+    <link rel="icon" href="assets/logo.png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -69,7 +70,7 @@ $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre
     <header class="public-header">
         <div class="container header-wrapper">
             <a href="index.php" class="logo">
-                <span class="logo-icon"></span>
+                <img src="assets/logo.png" alt="Logo" class="logo-img">
                 ArsipMusik
             </a>
             <nav>
@@ -173,7 +174,7 @@ $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre
             <?php else: ?>
                 <!-- Empty State -->
                 <div class="empty-state" id="empty-state">
-                    <div class="empty-state-icon">🎵</div>
+                    <div class="empty-state-icon"></div>
                     <h3>Tidak ada lagu ditemukan</h3>
                     <p>Coba gunakan kata kunci lain atau pilih genre yang berbeda.</p>
                 </div>
