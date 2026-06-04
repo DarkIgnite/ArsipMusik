@@ -1,37 +1,36 @@
 <?php
-// Secure authorization layer
+// Include session checking
 require_once '../config/session.php';
 
-// Include database connection
-require_once '../config/koneksi.php';
-
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Collect and trim inputs
-    $judul       = isset($_POST['judul']) ? trim($_POST['judul']) : '';
-    $artis       = isset($_POST['artis']) ? trim($_POST['artis']) : '';
-    $album       = isset($_POST['album']) ? trim($_POST['album']) : '';
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Collect and escape inputs
+    $judul       = isset($_POST['judul']) ? mysqli_real_escape_string($conn, trim($_POST['judul'])) : '';
+    $artis       = isset($_POST['artis']) ? mysqli_real_escape_string($conn, trim($_POST['artis'])) : '';
+    $album       = isset($_POST['album']) ? mysqli_real_escape_string($conn, trim($_POST['album'])) : '';
     $id_genre    = isset($_POST['id_genre']) ? (int)$_POST['id_genre'] : 0;
     $tahun_rilis = isset($_POST['tahun_rilis']) ? (int)$_POST['tahun_rilis'] : 0;
-    $durasi      = isset($_POST['durasi']) ? trim($_POST['durasi']) : '';
+    $durasi      = isset($_POST['durasi']) ? mysqli_real_escape_string($conn, trim($_POST['durasi'])) : '';
 
-    // 1. Strict Server-Side Validation: Check for empty values
-    if ($judul === '' || $artis === '' || $album === '' || $id_genre === 0 || $tahun_rilis === 0 || $durasi === '') {
+    // Validation check
+    if ($judul == '' || $artis == '' || $album == '' || $id_genre == 0 || $tahun_rilis == 0 || $durasi == '') {
         echo "<script>alert('Semua data input wajib diisi!'); window.history.back();</script>";
         exit();
     }
 
-    // 2. Cover Art Image Upload Handler
+    // Cover Art Image Upload Handler
     $new_file_name = 'default.jpg'; // Fallback file name
 
-    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == UPLOAD_ERR_OK) {
         $file_name = $_FILES['gambar']['name'];
         $file_tmp  = $_FILES['gambar']['tmp_name'];
         $file_size = $_FILES['gambar']['size'];
-        $file_ext  = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        
+        $file_parts = explode('.', $file_name);
+        $file_ext  = strtolower(end($file_parts));
         
         // Validation check for file format
-        $allowed_exts = ['jpg', 'jpeg', 'png'];
+        $allowed_exts = array('jpg', 'jpeg', 'png');
         if (!in_array($file_ext, $allowed_exts)) {
             echo "<script>alert('Format gambar tidak valid! Hanya diperbolehkan format JPG, JPEG, atau PNG.'); window.history.back();</script>";
             exit();
@@ -43,8 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // Unique file name generation using cryptographically secure or unique timestamp
-        $new_file_name = 'cover_' . uniqid('', true) . '.' . $file_ext;
+        // Unique file name generation using timestamp
+        $new_file_name = 'cover_' . time() . '.' . $file_ext;
         
         // Define destination upload folder
         $upload_dir = '../uploads/';
@@ -56,11 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 3. Database Entry Insertion via Secure Prepared Statements
-    $stmt = $conn->prepare("INSERT INTO tb_lagu (judul, artis, album, id_genre, tahun_rilis, durasi, gambar) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssiiss", $judul, $artis, $album, $id_genre, $tahun_rilis, $durasi, $new_file_name);
+    // insert data ke database
+    $insert = mysqli_query($conn, "INSERT INTO tb_lagu (judul, artis, album, id_genre, tahun_rilis, durasi, gambar) VALUES ('$judul', '$artis', '$album', '$id_genre', '$tahun_rilis', '$durasi', '$new_file_name')") or die(mysqli_error($conn));
 
-    if ($stmt->execute()) {
+    if ($insert) {
         echo "<script>alert('Lagu baru berhasil disimpan ke arsip!'); window.location.href = 'index.php';</script>";
         exit();
     } else {
@@ -70,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch all genres for form selector dropdown
-$genres_result = $conn->query("SELECT * FROM tb_genre ORDER BY nama_genre ASC");
+$genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -132,9 +130,9 @@ $genres_result = $conn->query("SELECT * FROM tb_genre ORDER BY nama_genre ASC");
                             <label for="id_genre" class="form-label">Genre</label>
                             <select name="id_genre" id="id_genre" class="form-input" required>
                                 <option value="" disabled selected>Pilih Genre</option>
-                                <?php while ($g_row = $genres_result->fetch_assoc()): ?>
-                                    <option value="<?= $g_row['id_genre'] ?>">
-                                        <?= htmlspecialchars($g_row['nama_genre']) ?>
+                                <?php while ($g_row = mysqli_fetch_array($genres_result)): ?>
+                                    <option value="<?php echo $g_row['id_genre'] ?>">
+                                        <?php echo $g_row['nama_genre'] ?>
                                     </option>
                                 <?php endwhile; ?>
                             </select>
@@ -189,7 +187,7 @@ $genres_result = $conn->query("SELECT * FROM tb_genre ORDER BY nama_genre ASC");
             const preview = document.getElementById('preview-image');
             const file = document.getElementById('gambar').files[0];
             const reader = new FileReader();
-
+ 
             reader.addEventListener("load", function () {
                 preview.src = reader.result;
             }, false);

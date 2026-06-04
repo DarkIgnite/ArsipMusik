@@ -1,18 +1,9 @@
 <?php
-// Database Configuration
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "arsipmusik";
+// koneksi data ke database agar masuk
+$hostname = 'localhost';
+$username = 'root';
+$password = '';
+$dbname = 'arsipmusik';
 
-// Establish Database Connection
-$conn = new mysqli($host, $user, $pass, $db);
-
-// Check Connection
-if ($conn->connect_error) {
-    die("Koneksi database gagal: " . $conn->connect_error);
-}
-
-// Set Charset for UTF-8 Compatibility
-$conn->set_charset("utf8mb4");
+$conn = mysqli_connect($hostname, $username, $password, $dbname) or die('Koneksi database gagal');
 ?>

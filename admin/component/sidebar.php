@@ -12,12 +12,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
     
     <nav class="sidebar-nav">
         <!-- Dashboard Link -->
-        <a href="index.php" class="sidebar-link <?= ($current_page === 'index.php') ? 'active' : '' ?>" id="sidebar-dashboard">
+        <a href="index.php" class="sidebar-link <?php echo ($current_page == 'index.php') ? 'active' : ''; ?>" id="sidebar-dashboard">
             <span>📊</span> Dashboard
         </a>
         
         <!-- Add Song Link -->
-        <a href="tambah.php" class="sidebar-link <?= ($current_page === 'tambah.php') ? 'active' : '' ?>" id="sidebar-tambah">
+        <a href="tambah.php" class="sidebar-link <?php echo ($current_page == 'tambah.php') ? 'active' : ''; ?>" id="sidebar-tambah">
             <span>➕</span> Tambah Lagu
         </a>
         

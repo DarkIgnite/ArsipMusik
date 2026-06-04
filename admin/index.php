@@ -1,22 +1,30 @@
 <?php
-// Secure authorization layer
+// Include session checking
 require_once '../config/session.php';
-
-// Include database connection
-require_once '../config/koneksi.php';
 
 // Pagination settings
 $limit = 10;
-$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+if (isset($_GET['page'])) {
+    $page = max(1, (int)$_GET['page']);
+} else {
+    $page = 1;
+}
 
 // Search and Filter variables
-$search = isset($_GET['q']) ? trim($_GET['q']) : '';
-$genre_filter = isset($_GET['genre']) ? (int)$_GET['genre'] : 0;
+$search = '';
+if (isset($_GET['q'])) {
+    $search = trim($_GET['q']);
+}
+
+$genre_filter = 0;
+if (isset($_GET['genre'])) {
+    $genre_filter = (int)$_GET['genre'];
+}
 
 // Build query conditions
-$where_clauses = [];
-if ($search !== '') {
-    $safe_search = $conn->real_escape_string($search);
+$where_clauses = array();
+if ($search != '') {
+    $safe_search = mysqli_real_escape_string($conn, $search);
     $where_clauses[] = "(tb_lagu.judul LIKE '%$safe_search%' OR tb_lagu.artis LIKE '%$safe_search%' OR tb_lagu.album LIKE '%$safe_search%')";
 }
 if ($genre_filter > 0) {
@@ -29,9 +37,9 @@ if (count($where_clauses) > 0) {
 }
 
 // Fetch row count for pagination calculations
-$count_query = "SELECT COUNT(*) as total FROM tb_lagu $where_sql";
-$count_result = $conn->query($count_query);
-$total_rows = $count_result->fetch_assoc()['total'];
+$count_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu $where_sql");
+$count_data = mysqli_fetch_array($count_query);
+$total_rows = $count_data['total'];
 $total_pages = ceil($total_rows / $limit);
 if ($total_pages < 1) $total_pages = 1;
 if ($page > $total_pages) $page = $total_pages;
@@ -40,17 +48,15 @@ $offset = ($page - 1) * $limit;
 if ($offset < 0) $offset = 0;
 
 // Fetch track details with INNER JOIN
-$query = "SELECT tb_lagu.*, tb_genre.nama_genre 
+$query = mysqli_query($conn, "SELECT tb_lagu.*, tb_genre.nama_genre 
           FROM tb_lagu 
           INNER JOIN tb_genre ON tb_lagu.id_genre = tb_genre.id_genre 
           $where_sql 
           ORDER BY tb_lagu.id_lagu DESC 
-          LIMIT $limit OFFSET $offset";
-$result = $conn->query($query);
+          LIMIT $limit OFFSET $offset");
 
 // Fetch genre listings for dropdown filter
-$genres_query = "SELECT * FROM tb_genre ORDER BY nama_genre ASC";
-$genres_result = $conn->query($genres_query);
+$genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -86,21 +92,21 @@ $genres_result = $conn->query($genres_query);
                 <div class="search-filter-card">
                     <form action="index.php" method="GET" class="search-filter-form">
                         <!-- Text Search field -->
-                        <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" 
+                        <input type="text" name="q" value="<?php echo $search ?>" 
                                placeholder="Cari judul lagu, artis, atau album..." class="form-input" id="admin-search-input">
                         
                         <!-- Genre Select field -->
                         <select name="genre" class="form-input" id="admin-genre-filter">
                             <option value="0">Semua Genre</option>
-                            <?php while ($g_row = $genres_result->fetch_assoc()): ?>
-                                <option value="<?= $g_row['id_genre'] ?>" <?= ($genre_filter == $g_row['id_genre']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($g_row['nama_genre']) ?>
+                            <?php while ($g_row = mysqli_fetch_array($genres_result)): ?>
+                                <option value="<?php echo $g_row['id_genre'] ?>" <?php echo ($genre_filter == $g_row['id_genre']) ? 'selected' : '' ?>>
+                                    <?php echo $g_row['nama_genre'] ?>
                                 </option>
                             <?php endwhile; ?>
                         </select>
                         
                         <button type="submit" class="btn-search" id="btn-admin-submit-search">Cari</button>
-                        <?php if ($search !== '' || $genre_filter > 0): ?>
+                        <?php if ($search != '' || $genre_filter > 0): ?>
                             <a href="index.php" class="btn-reset" id="btn-admin-reset-search">Reset</a>
                         <?php endif; ?>
                     </form>
@@ -108,7 +114,7 @@ $genres_result = $conn->query($genres_query);
             </section>
 
             <!-- Display Track Table -->
-            <?php if ($result->num_rows > 0): ?>
+            <?php if (mysqli_num_rows($query) > 0): ?>
                 <div class="table-card" id="admin-table-card">
                     <div class="table-responsive">
                         <table class="admin-table">
@@ -124,37 +130,37 @@ $genres_result = $conn->query($genres_query);
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($row = $result->fetch_assoc()): ?>
+                                <?php while ($row = mysqli_fetch_array($query)): ?>
                                     <tr>
                                         <!-- Album Cover column -->
                                         <td>
-                                            <img src="../uploads/<?= htmlspecialchars($row['gambar']) ?>" 
-                                                 alt="Cover <?= htmlspecialchars($row['judul']) ?>" class="table-song-thumb">
+                                            <img src="../uploads/<?php echo $row['gambar'] ?>" 
+                                                 alt="Cover <?php echo $row['judul'] ?>" class="table-song-thumb">
                                         </td>
                                         <!-- Song Details column -->
                                         <td>
                                             <div class="table-song-info">
                                                 <div>
-                                                    <div class="table-song-title"><?= htmlspecialchars($row['judul']) ?></div>
-                                                    <div class="table-song-artist"><?= htmlspecialchars($row['artis']) ?></div>
+                                                    <div class="table-song-title"><?php echo $row['judul'] ?></div>
+                                                    <div class="table-song-artist"><?php echo $row['artis'] ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <!-- Album column -->
-                                        <td><?= htmlspecialchars($row['album']) ?></td>
+                                        <td><?php echo $row['album'] ?></td>
                                         <!-- Genre Badge column -->
                                         <td>
-                                            <span class="table-badge"><?= htmlspecialchars($row['nama_genre']) ?></span>
+                                            <span class="table-badge"><?php echo $row['nama_genre'] ?></span>
                                         </td>
                                         <!-- Year column -->
-                                        <td><?= htmlspecialchars($row['tahun_rilis']) ?></td>
+                                        <td><?php echo $row['tahun_rilis'] ?></td>
                                         <!-- Duration column -->
-                                        <td><?= htmlspecialchars($row['durasi']) ?></td>
+                                        <td><?php echo $row['durasi'] ?></td>
                                         <!-- Action buttons column -->
                                         <td style="text-align: center;">
                                             <div class="action-buttons-cell">
-                                                <a href="edit.php?id=<?= $row['id_lagu'] ?>" class="btn-icon btn-edit">Edit</a>
-                                                <a href="hapus.php?id=<?= $row['id_lagu'] ?>" 
+                                                <a href="edit.php?id=<?php echo $row['id_lagu'] ?>" class="btn-icon btn-edit">Edit</a>
+                                                <a href="hapus.php?id=<?php echo $row['id_lagu'] ?>" 
                                                    class="btn-icon btn-delete" 
                                                    onclick="return confirm('Yakin ingin menghapus lagu ini?')">Hapus</a>
                                             </div>
@@ -170,19 +176,19 @@ $genres_result = $conn->query($genres_query);
                 <?php if ($total_pages > 1): ?>
                     <div class="pagination-container" id="admin-pagination">
                         <!-- Prev Page Button -->
-                        <a href="?q=<?= urlencode($search) ?>&genre=<?= $genre_filter ?>&page=<?= $page - 1 ?>" 
-                           class="pagination-btn <?= ($page <= 1) ? 'disabled' : '' ?>"
-                           <?= ($page <= 1) ? 'onclick="return false;"' : '' ?>>&laquo; Prev</a>
+                        <a href="?q=<?php echo urlencode($search) ?>&genre=<?php echo $genre_filter ?>&page=<?php echo $page - 1 ?>" 
+                           class="pagination-btn <?php echo ($page <= 1) ? 'disabled' : '' ?>"
+                           <?php echo ($page <= 1) ? 'onclick="return false;"' : '' ?>>&laquo; Prev</a>
 
                         <!-- Page Indicator -->
                         <span class="pagination-info">
-                            Halaman <?= $page ?> dari <?= $total_pages ?>
+                            Halaman <?php echo $page ?> dari <?php echo $total_pages ?>
                         </span>
 
                         <!-- Next Page Button -->
-                        <a href="?q=<?= urlencode($search) ?>&genre=<?= $genre_filter ?>&page=<?= $page + 1 ?>" 
-                           class="pagination-btn <?= ($page >= $total_pages) ? 'disabled' : '' ?>"
-                           <?= ($page >= $total_pages) ? 'onclick="return false;"' : '' ?>>Next &raquo;</a>
+                        <a href="?q=<?php echo urlencode($search) ?>&genre=<?php echo $genre_filter ?>&page=<?php echo $page + 1 ?>" 
+                           class="pagination-btn <?php echo ($page >= $total_pages) ? 'disabled' : '' ?>"
+                           <?php echo ($page >= $total_pages) ? 'onclick="return false;"' : '' ?>>Next &raquo;</a>
                     </div>
                 <?php endif; ?>
 

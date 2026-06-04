@@ -1,54 +1,8 @@
 <?php
-// Start session
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Redirect to admin panel if already logged in
-if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+session_start();
+if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] == true) {
     header("Location: admin/index.php");
     exit();
-}
-
-require_once 'config/koneksi.php';
-
-$error = '';
-
-// Handle login request
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
-
-    // Server-side validation
-    if ($username === '' || $password === '') {
-        echo "<script>alert('Username dan password tidak boleh kosong!'); window.history.back();</script>";
-        exit();
-    }
-
-    // Secure database lookup
-    $safe_username = $conn->real_escape_string($username);
-    $query = "SELECT * FROM tb_user WHERE username = '$safe_username' LIMIT 1";
-    $result = $conn->query($query);
-
-    if ($result && $result->num_rows > 0) {
-        $user_data = $result->fetch_assoc();
-        
-        // Verify BCrypt hashed password
-        if (password_verify($password, $user_data['password'])) {
-            // Establish authorized session parameters
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['username'] = $user_data['username'];
-            $_SESSION['id_user'] = $user_data['id_user'];
-            
-            // Redirect to dashboard
-            header("Location: admin/index.php");
-            exit();
-        } else {
-            $error = 'Username atau password salah!';
-        }
-    } else {
-        $error = 'Username atau password salah!';
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -72,14 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2 class="login-title">Administrator</h2>
         <p class="login-subtitle">Masuk untuk mengelola arsip lagu</p>
 
-        <!-- Display error alert if login fails -->
-        <?php if ($error !== ''): ?>
-            <div class="alert alert-danger" id="login-error-alert">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
-
-        <form action="login.php" method="POST" id="login-form">
+        <form action="" method="POST" id="login-form">
             <!-- Username Field -->
             <div class="form-group">
                 <label for="username" class="form-label">Username</label>
@@ -95,8 +42,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="btn-primary-block" id="btn-login-submit">Masuk</button>
+            <input type="submit" name="submit" value="Masuk" class="btn-primary-block" id="btn-login-submit">
         </form>
+
+        <?php
+        include('config/koneksi.php');
+        if (isset($_POST['submit'])) {
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+
+            $sql = mysqli_query($conn, "SELECT * FROM tb_user WHERE username = '$username' AND password = '$password'") or die(mysqli_error($conn));
+
+            if (mysqli_num_rows($sql) == 0) {
+                echo "<script>alert('Username atau password salah!')</script>";
+                echo '<script type="text/javascript">window.location="login.php";</script>';
+            } else {
+                $row = mysqli_fetch_array($sql);
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['username'] = $row['username'];
+                $_SESSION['id_user'] = $row['id_user'];
+
+                echo "<script>alert('Login Berhasil')</script>";
+                echo '<script type="text/javascript">window.location="admin/index.php";</script>';
+            }
+        }
+        ?>
     </div>
 
 </body>
