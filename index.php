@@ -2,7 +2,7 @@
 session_start();
 include 'config/koneksi.php';
 
-$limit = 10;
+$limit = 8;
 if (isset($_GET['page'])) {
     $page = (int)$_GET['page'];
 } else {
