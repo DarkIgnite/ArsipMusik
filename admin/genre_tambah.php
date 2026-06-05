@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php endif; ?>
 
                 <div class="form-card" style="margin: 0; padding: 0; border: none; box-shadow: none; background: transparent;">
-                    <form action="genre_tambah.php" method="POST" style="margin: 0; padding: 25px; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <form action="" method="POST" style="margin: 0; padding: 25px; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
                         <div class="form-group">
                             <label style="font-weight: 600; color: var(--text-primary); margin-bottom: 10px; display: block;">Nama Genre</label>
                             <input type="text" name="nama_genre" placeholder="Contoh: Rock, Pop, Jazz, Electronic" required style="height: 46px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 16px; font-size: 1rem; width: 100%;">

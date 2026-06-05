@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'config/koneksi.php';
+include 'koneksi.php';
 
 $limit = 8;
 if (isset($_GET['page'])) {
@@ -134,15 +134,15 @@ $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre
                                 
                                 <div class="song-meta-grid">
                                     <div>
-                                        <span class="meta-label">Album</span>
+                                        <span class="meta-label"><b>Album</b></span>
                                         <span class="meta-value" title="<?php echo $row['album'] ?>"><?php echo $row['album'] ?></span>
                                     </div>
                                     <div>
-                                        <span class="meta-label">Durasi</span>
+                                        <span class="meta-label"><b>Durasi</b></span>
                                         <span class="meta-value"><?php echo $row['durasi'] ?></span>
                                     </div>
                                     <div>
-                                        <span class="meta-label">Rilis</span>
+                                        <span class="meta-label"><b>Rilis</b></span>
                                         <span class="meta-value"><?php echo $row['tahun_rilis'] ?></span>
                                     </div>
                                 </div>
