@@ -1,5 +1,4 @@
 <?php
-// Include session checking
 require_once '../config/session.php';
 
 $flash = '';
@@ -27,7 +26,7 @@ if (mysqli_num_rows($query) == 0) {
 
 $genre = mysqli_fetch_array($query);
 
-// Handle form submission
+// proses submit
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama_genre = isset($_POST['nama_genre']) ? mysqli_real_escape_string($conn, trim($_POST['nama_genre'])) : '';
 

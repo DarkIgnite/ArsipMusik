@@ -1,19 +1,19 @@
 <?php
-// Include session checking
+// sertakan pengecekan sesi
 require_once '../config/session.php';
 
-// Handle Track Deletion
+// tangani penghapusan lagu
 if (isset($_GET['id_lagu']) && !empty($_GET['id_lagu'])) {
     $id_lagu = (int)$_GET['id_lagu'];
 
-    // Retrieve the track's current image to clean up disk storage
+    // ambil gambar lagu saat ini untuk membersihkan penyimpanan
     $query = mysqli_query($conn, "SELECT gambar FROM tb_lagu WHERE id_lagu = '$id_lagu'");
 
     if ($query && mysqli_num_rows($query) > 0) {
         $lagu = mysqli_fetch_array($query);
         $gambar = $lagu['gambar'];
 
-        // Delete associated image file from uploads/ directory if it is not default.jpg
+        // hapus file gambar terkait dari direktori uploads jika bukan default.jpg
         if ($gambar != 'default.jpg') {
             $image_path = '../uploads/' . $gambar;
             if (file_exists($image_path)) {
@@ -21,7 +21,7 @@ if (isset($_GET['id_lagu']) && !empty($_GET['id_lagu'])) {
             }
         }
 
-        // Perform DB deletion
+        // lakukan penghapusan di database
         $delete = mysqli_query($conn, "DELETE FROM tb_lagu WHERE id_lagu = '$id_lagu'");
 
         if ($delete) {
@@ -39,11 +39,11 @@ if (isset($_GET['id_lagu']) && !empty($_GET['id_lagu'])) {
     exit();
 }
 
-// Handle Genre Deletion
+// tangani penghapusan genre
 if (isset($_GET['id_genre']) && !empty($_GET['id_genre'])) {
     $id_genre = (int)$_GET['id_genre'];
 
-    // Check if there are songs associated with this genre
+    // periksa apakah ada lagu yang terkait dengan genre ini
     $check_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu WHERE id_genre = '$id_genre'");
     $count = mysqli_fetch_array($check_query)['total'];
 
@@ -65,7 +65,7 @@ if (isset($_GET['id_genre']) && !empty($_GET['id_genre'])) {
     exit();
 }
 
-// Redirect back to dashboard if no valid ID was provided
+// alihkan kembali ke dashboard jika tidak ada id valid yang diberikan
 header("Location: index.php");
 exit();
 ?>

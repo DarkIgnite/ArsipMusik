@@ -1,5 +1,4 @@
 <?php
-// Include session checking
 require_once '../config/session.php';
 
 $flash = '';
@@ -10,7 +9,7 @@ if (isset($_SESSION['flash'])) {
     unset($_SESSION['flash'], $_SESSION['flash_type']);
 }
 
-// Handle form submission
+// proses submit
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama_genre = isset($_POST['nama_genre']) ? mysqli_real_escape_string($conn, trim($_POST['nama_genre'])) : '';
 

@@ -1,5 +1,5 @@
 <?php
-// Include session checking
+// sertakan pengecekan sesi
 require_once '../config/session.php';
 
 $flash = '';
@@ -10,7 +10,7 @@ if (isset($_SESSION['flash'])) {
     unset($_SESSION['flash'], $_SESSION['flash_type']);
 }
 
-// Check if dynamic track ID is present
+// periksa apakah id lagu dinamis ada
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: lagu_data.php");
     exit();
@@ -18,7 +18,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $id_lagu = (int)$_GET['id'];
 
-// Retrieve existing track details
+// ambil detail lagu yang ada
 $query = mysqli_query($conn, "SELECT * FROM tb_lagu WHERE id_lagu = '$id_lagu'");
 if (mysqli_num_rows($query) == 0) {
     $_SESSION['flash'] = 'Arsip lagu tidak ditemukan!';
@@ -29,9 +29,9 @@ if (mysqli_num_rows($query) == 0) {
 
 $lagu = mysqli_fetch_array($query);
 
-// Handle form submission (POST)
+// tangani submit form (post)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Collect and escape inputs
+    // kumpulkan dan bersihkan input
     $judul       = isset($_POST['judul']) ? mysqli_real_escape_string($conn, trim($_POST['judul'])) : '';
     $artis       = isset($_POST['artis']) ? mysqli_real_escape_string($conn, trim($_POST['artis'])) : '';
     $album       = isset($_POST['album']) ? mysqli_real_escape_string($conn, trim($_POST['album'])) : '';
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tahun_rilis = isset($_POST['tahun_rilis']) ? (int)$_POST['tahun_rilis'] : 0;
     $durasi      = isset($_POST['durasi']) ? mysqli_real_escape_string($conn, trim($_POST['durasi'])) : '';
 
-    // Validation check
+    // cek validasi
     if ($judul == '' || $artis == '' || $album == '' || $id_genre == 0 || $tahun_rilis == 0 || $durasi == '') {
         $_SESSION['flash'] = 'Semua data input wajib diisi!';
         $_SESSION['flash_type'] = 'error';
@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     $old_image = $lagu['gambar'];
-    $new_file_name = $old_image; // Keep current file name as fallback
+    $new_file_name = $old_image; // simpan nama file saat ini sebagai cadangan
 
-    // Handle New Cover Upload
+    // tangani unggah sampul baru
     if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == UPLOAD_ERR_OK) {
         $file_name = $_FILES['gambar']['name'];
         $file_tmp  = $_FILES['gambar']['tmp_name'];
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $file_parts = explode('.', $file_name);
         $file_ext  = strtolower(end($file_parts));
         
-        // Format check
+        // cek format
         $allowed_exts = array('jpg', 'jpeg', 'png');
         if (!in_array($file_ext, $allowed_exts)) {
             $_SESSION['flash'] = 'Format gambar tidak valid! Hanya diperbolehkan JPG, JPEG, atau PNG.';
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
-        // Size check (limit: 2MB)
+        // cek ukuran (batas: 2mb)
         if ($file_size > 2 * 1024 * 1024) {
             $_SESSION['flash'] = 'Ukuran file gambar tidak boleh melebihi 2MB!';
             $_SESSION['flash_type'] = 'error';
@@ -76,12 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
-        // Unique renaming using timestamp
+        // penamaan ulang unik menggunakan timestamp
         $new_file_name = 'cover_' . time() . '.' . $file_ext;
         $upload_dir = '../uploads/';
         
         if (move_uploaded_file($file_tmp, $upload_dir . $new_file_name)) {
-            // Delete old file if it exists and is not the default image
+            // hapus file lama jika ada dan bukan gambar default
             if ($old_image != 'default.jpg') {
                 $old_image_path = $upload_dir . $old_image;
                 if (file_exists($old_image_path)) {
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Database Entry Update via procedural query
+    // pembaruan entri database melalui query prosedural
     $update = mysqli_query($conn, "UPDATE tb_lagu SET judul = '$judul', artis = '$artis', album = '$album', id_genre = '$id_genre', tahun_rilis = '$tahun_rilis', durasi = '$durasi', gambar = '$new_file_name' WHERE id_lagu = '$id_lagu'") or die(mysqli_error($conn));
 
     if ($update) {
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Fetch all genres for select menu option population
+// ambil semua genre untuk pengisian opsi menu pilihan
 $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
 ?>
 <!DOCTYPE html>

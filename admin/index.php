@@ -1,8 +1,8 @@
 <?php
-// Include session checking
+// sertakan pengecekan sesi
 require_once '../config/session.php';
 
-// Fetch some statistics for the dashboard
+// ambil beberapa statistik untuk dashboard
 $count_lagu_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu");
 $count_lagu = mysqli_fetch_array($count_lagu_query)['total'];
 

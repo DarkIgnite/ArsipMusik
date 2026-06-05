@@ -1,8 +1,6 @@
 <?php
-// Include session checking
 require_once '../config/session.php';
 
-// Fetch genre listings
 $query = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY id_genre DESC");
 
 $flash = '';

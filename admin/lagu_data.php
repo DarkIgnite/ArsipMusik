@@ -1,8 +1,8 @@
 <?php
-// Include session checking
+// sertakan pengecekan sesi
 require_once '../config/session.php';
 
-// Pagination settings
+// pengaturan paginasi
 $limit = 10;
 if (isset($_GET['page'])) {
     $page = max(1, (int)$_GET['page']);
@@ -10,7 +10,7 @@ if (isset($_GET['page'])) {
     $page = 1;
 }
 
-// Search and Filter variables
+// variabel pencarian dan filter
 $search = '';
 if (isset($_GET['q'])) {
     $search = trim($_GET['q']);
@@ -21,7 +21,7 @@ if (isset($_GET['genre'])) {
     $genre_filter = (int)$_GET['genre'];
 }
 
-// Build query conditions
+// buat kondisi query
 $where_clauses = array();
 if ($search != '') {
     $safe_search = mysqli_real_escape_string($conn, $search);
@@ -36,7 +36,7 @@ if (count($where_clauses) > 0) {
     $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
 }
 
-// Fetch row count for pagination calculations
+// ambil jumlah baris untuk perhitungan paginasi
 $count_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lagu $where_sql");
 $count_data = mysqli_fetch_array($count_query);
 $total_rows = $count_data['total'];
@@ -47,7 +47,7 @@ if ($page > $total_pages) $page = $total_pages;
 $offset = ($page - 1) * $limit;
 if ($offset < 0) $offset = 0;
 
-// Fetch track details with INNER JOIN
+// ambil detail lagu dengan inner join
 $query = mysqli_query($conn, "SELECT tb_lagu.*, tb_genre.nama_genre 
           FROM tb_lagu 
           INNER JOIN tb_genre ON tb_lagu.id_genre = tb_genre.id_genre 
@@ -55,7 +55,7 @@ $query = mysqli_query($conn, "SELECT tb_lagu.*, tb_genre.nama_genre
           ORDER BY tb_lagu.id_lagu DESC 
           LIMIT $limit OFFSET $offset");
 
-// Fetch genre listings for dropdown filter
+// ambil daftar genre untuk filter dropdown
 $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
 
 $flash = '';

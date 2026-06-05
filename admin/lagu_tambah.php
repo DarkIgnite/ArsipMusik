@@ -1,5 +1,5 @@
 <?php
-// Include session checking
+// sertakan pengecekan sesi
 require_once '../config/session.php';
 
 $flash = '';
@@ -10,9 +10,9 @@ if (isset($_SESSION['flash'])) {
     unset($_SESSION['flash'], $_SESSION['flash_type']);
 }
 
-// Handle form submission
+// tangani submit form
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Collect and escape inputs
+    // kumpulkan dan bersihkan input
     $judul       = isset($_POST['judul']) ? mysqli_real_escape_string($conn, trim($_POST['judul'])) : '';
     $artis       = isset($_POST['artis']) ? mysqli_real_escape_string($conn, trim($_POST['artis'])) : '';
     $album       = isset($_POST['album']) ? mysqli_real_escape_string($conn, trim($_POST['album'])) : '';
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tahun_rilis = isset($_POST['tahun_rilis']) ? (int)$_POST['tahun_rilis'] : 0;
     $durasi      = isset($_POST['durasi']) ? mysqli_real_escape_string($conn, trim($_POST['durasi'])) : '';
 
-    // Validation check
+    // cek validasi
     if ($judul == '' || $artis == '' || $album == '' || $id_genre == 0 || $tahun_rilis == 0 || $durasi == '') {
         $_SESSION['flash'] = 'Semua data input wajib diisi!';
         $_SESSION['flash_type'] = 'error';
@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
-    // Cover Art Image Upload Handler
-    $new_file_name = 'default.jpg'; // Fallback file name
+    // penangan unggah gambar sampul
+    $new_file_name = 'default.jpg'; // nama file cadangan
 
     if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == UPLOAD_ERR_OK) {
         $file_name = $_FILES['gambar']['name'];
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $file_parts = explode('.', $file_name);
         $file_ext  = strtolower(end($file_parts));
         
-        // Validation check for file format
+        // cek validasi untuk format file
         $allowed_exts = array('jpg', 'jpeg', 'png');
         if (!in_array($file_ext, $allowed_exts)) {
             $_SESSION['flash'] = 'Format gambar tidak valid! Hanya diperbolehkan JPG, JPEG, atau PNG.';
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
-        // Validation check for file size (limit: 2MB)
+        // cek validasi untuk ukuran file (batas: 2mb)
         if ($file_size > 2 * 1024 * 1024) {
             $_SESSION['flash'] = 'Ukuran file gambar tidak boleh melebihi 2MB!';
             $_SESSION['flash_type'] = 'error';
@@ -56,13 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
-        // Unique file name generation using timestamp
+        // pembuatan nama file unik menggunakan timestamp
         $new_file_name = 'cover_' . time() . '.' . $file_ext;
         
-        // Define destination upload folder
+        // tentukan folder unggahan tujuan
         $upload_dir = '../uploads/';
         
-        // Attempt to move file to uploads/
+        // coba pindahkan file ke uploads/
         if (!move_uploaded_file($file_tmp, $upload_dir . $new_file_name)) {
             $_SESSION['flash'] = 'Gagal mengupload cover art!';
             $_SESSION['flash_type'] = 'error';
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // insert data ke database
+    // masukkan data ke database
     $insert = mysqli_query($conn, "INSERT INTO tb_lagu (judul, artis, album, id_genre, tahun_rilis, durasi, gambar) VALUES ('$judul', '$artis', '$album', '$id_genre', '$tahun_rilis', '$durasi', '$new_file_name')") or die(mysqli_error($conn));
 
     if ($insert) {
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Fetch all genres for form selector dropdown
+// ambil semua genre untuk dropdown pemilih form
 $genres_result = mysqli_query($conn, "SELECT * FROM tb_genre ORDER BY nama_genre ASC");
 ?>
 <!DOCTYPE html>
