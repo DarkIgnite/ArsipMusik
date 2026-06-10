@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'koneksi.php';
+include 'config/koneksi.php';
 
 $limit = 8;
 if (isset($_GET['page'])) {
